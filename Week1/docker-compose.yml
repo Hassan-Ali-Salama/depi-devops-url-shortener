@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  web:
+    build: .
+    image: hassan/url-shortener:V1.0
+    container_name: url-shortener-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./db:/app/db          
+    environment:
+      - PORT=3000
+      - DB_FILE=/app/db/data.sqlite
+    restart: unless-stopped
