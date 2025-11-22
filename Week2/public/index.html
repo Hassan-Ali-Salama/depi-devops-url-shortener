@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>URL Shortener</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>URL Shortener</h1>
+    <p class="subtitle">Turn long links into short, shareable URLs — your links are saved locally for you.</p>
+  </header>
+
+  <main class="container">
+    <section class="card form-card">
+      <label for="url">Enter a long URL</label>
+      <input id="url" placeholder="https://example.com/very/long/path" />
+      <div class="row">
+        <button id="shorten" class="btn primary">Shorten</button>
+        <button id="showAll" class="btn outline">Show All Links</button>
+      </div>
+
+      <div id="result" class="result" style="display:none">
+        <p>Short URL:</p>
+        <a id="shortLink" href="#" target="_blank"></a>
+        <p class="help">Info page: <span id="infoLink"></span></p>
+      </div>
+      <div id="error" class="error" style="display:none"></div>
+    </section>
+
+    <section class="card list-card">
+      <h2>My Links</h2>
+      <div id="cardsContainer" class="cards"></div>
+      <p id="empty" class="empty">No links yet. Create one!</p>
+    </section>
+  </main>
+
+  <script>
+    // helper: generate or get ownerId from localStorage
+    function getOrCreateOwnerId() {
+      let id = localStorage.getItem('ownerId');
+      if (!id) {
+        // simple random id (not cryptographically critical)
+        id = 'owner_' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem('ownerId', id);
+      }
+      return id;
+    }
+    const OWNER_ID = getOrCreateOwnerId();
+
+    const shortBtn = document.getElementById('shorten');
+    const urlInp = document.getElementById('url');
+    const resultDiv = document.getElementById('result');
+    const shortLink = document.getElementById('shortLink');
+    const infoLink = document.getElementById('infoLink');
+    const errorDiv = document.getElementById('error');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const emptyP = document.getElementById('empty');
+    const showAllBtn = document.getElementById('showAll');
+
+    async function fetchMyLinks() {
+      errorDiv.style.display = 'none';
+      cardsContainer.innerHTML = '';
+      const res = await fetch('/api/urls?mine=true', { headers: { 'X-Owner-Id': OWNER_ID }});
+      if (!res.ok) {
+        const j = await res.json().catch(()=>({error:'error'}));
+        errorDiv.textContent = j.error || 'Failed to load';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      const data = await res.json();
+      if (!data.length) {
+        emptyP.style.display = 'block';
+      } else {
+        emptyP.style.display = 'none';
+      }
+      data.forEach(renderCard);
+    }
+
+    function renderCard(item) {
+      const card = document.createElement('div');
+      card.className = 'link-card';
+      card.innerHTML = `
+        <div class="top">
+          <div class="short"><a href="${item.short_url}" target="_blank">${item.short_url}</a></div>
+          <div class="date">${new Date(item.created_at).toLocaleString()}</div>
+        </div>
+        <div class="orig"><a href="${item.url}" target="_blank" title="${item.url}">${truncate(item.url, 80)}</a></div>
+        <div class="actions">
+          <button class="btn small" data-action="visit">Visit</button>
+          <button class="btn small outline" data-action="info">Info</button>
+          <button class="btn small" data-action="copy">Copy</button>
+          <button class="btn small danger" data-action="delete">Delete</button>
+        </div>
+      `;
+      // attach handlers
+      card.querySelector('[data-action="visit"]').addEventListener('click', () => {
+        window.open(item.short_url, '_blank');
+      });
+      card.querySelector('[data-action="info"]').addEventListener('click', () => {
+        window.open('/s/' + item.code, '_blank');
+      });
+      card.querySelector('[data-action="copy"]').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(item.short_url);
+          alert('Copied to clipboard');
+        } catch(e) {
+          prompt('Copy this URL', item.short_url);
+        }
+      });
+      card.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+        if (!confirm('Delete this short link?')) return;
+        const res = await fetch('/api/urls/' + item.code, { method: 'DELETE', headers: { 'X-Owner-Id': OWNER_ID }});
+        if (!res.ok) {
+          const j = await res.json().catch(()=>({error:'error'}));
+          alert('Delete failed: ' + (j.error || 'error'));
+          return;
+        }
+        card.remove();
+      });
+
+      cardsContainer.appendChild(card);
+    }
+
+    function truncate(s, n) {
+      if (s.length <= n) return s;
+      return s.slice(0,n-2) + '...';
+    }
+
+    shortBtn.addEventListener('click', async () => {
+      const url = urlInp.value.trim();
+      errorDiv.style.display = 'none';
+      resultDiv.style.display = 'none';
+      if (!url) {
+        errorDiv.textContent = 'Please enter a valid URL';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      try {
+        const res = await fetch('/api/shorten', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Owner-Id': OWNER_ID
+          },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'error');
+        shortLink.href = data.short_url;
+        shortLink.textContent = data.short_url;
+        infoLink.innerHTML = `<a href="/s/${data.code}" target="_blank">Info page</a>`;
+        resultDiv.style.display = 'block';
+        // prepend the new card (create equivalent object)
+        renderCard({ id: data.id, code: data.code, url: data.url, short_url: data.short_url, created_at: data.created_at });
+      } catch (err) {
+        errorDiv.textContent = err.message || 'An error occurred';
+        errorDiv.style.display = 'block';
+      }
+    });
+
+    // allow Enter key
+    urlInp.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') shortBtn.click();
+    });
+
+    // Show all links (global) for demo
+    showAllBtn.addEventListener('click', async () => {
+      // fetch all
+      const res = await fetch('/api/urls');
+      if (!res.ok) {
+        alert('Failed to fetch all links');
+        return;
+      }
+      const data = await res.json();
+      cardsContainer.innerHTML = '';
+      if (!data.length) emptyP.style.display = 'block';
+      else emptyP.style.display = 'none';
+      data.forEach(renderCard);
+    });
+
+    // initial load (my links)
+    fetchMyLinks();
+  </script>
+</body>
+</html>
