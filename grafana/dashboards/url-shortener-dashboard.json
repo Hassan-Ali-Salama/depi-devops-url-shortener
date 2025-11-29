@@ -1,13 +1,4 @@
-{
-  "id": null,
-  "uid": "url-shortener-dashboard",
-  "title": "URL Shortener Service",
-  "tags": ["url-shortener", "week3", "prometheus"],
-  "timezone": "browser",
-  "schemaVersion": 36,
-  "version": 1,
-  "refresh": "5s",
-  "panels": [
+ [
     {
       "id": 1,
       "type": "timeseries",
@@ -15,16 +6,8 @@
       "description": "Week 3 - rate of URLs shortened and redirects over time.",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(url_shortener_created_total[5m])",
-          "legendFormat": "URLs created /s"
-        },
-        {
-          "refId": "B",
-          "expr": "rate(url_shortener_redirect_total[5m])",
-          "legendFormat": "Redirects /s"
-        }
+        { "refId": "A", "expr": "rate(url_shortener_created_total[5m])", "legendFormat": "URLs created /s" },
+        { "refId": "B", "expr": "rate(url_shortener_redirect_total[5m])", "legendFormat": "Redirects /s" }
       ]
     },
     {
@@ -34,17 +17,10 @@
       "description": "Week 3 - total URLs that have been shortened.",
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "url_shortener_created_total"
-        }
+        { "refId": "A", "expr": "url_shortener_created_total" }
       ],
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "orientation": "horizontal",
         "colorMode": "value",
         "graphMode": "none",
@@ -58,11 +34,7 @@
       "description": "Week 3 - 95th percentile request latency for URL creation and redirects.",
       "gridPos": { "h": 8, "w": 18, "x": 6, "y": 8 },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(url_shortener_request_latency_seconds_bucket[5m])) by (le))",
-          "legendFormat": "p95 latency (s)"
-        }
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum(rate(url_shortener_request_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95 latency (s)" }
       ]
     },
     {
@@ -72,14 +44,40 @@
       "description": "Week 3 - rate of failed lookups (404).",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(url_shortener_not_found_total[5m])",
-          "legendFormat": "404s /s"
-        }
+        { "refId": "A", "expr": "rate(url_shortener_not_found_total[5m])", "legendFormat": "404s /s" }
       ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "High 404 Rate Alert",
+      "description": "Shows if High404Rate alert is firing",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 24 },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname='High404Rate', alertstate='firing'}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "orientation": "horizontal", "justifyMode": "center" }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "High Latency 95th Percentile Alert",
+      "description": "Shows if HighLatency95 alert is firing",
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 24 },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname='HighLatency95', alertstate='firing'}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "orientation": "horizontal", "justifyMode": "center" }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "No New URLs Alert",
+      "description": "Shows if NoNewURLs alert is firing",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 24 },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname='NoNewURLs', alertstate='firing'}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "orientation": "horizontal", "justifyMode": "center" }
     }
-  ],
-  "templating": { "list": [] },
-  "time": { "from": "now-15m", "to": "now" }
-}
+  ]
