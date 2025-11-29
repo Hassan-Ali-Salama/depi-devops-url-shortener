@@ -1,6 +1,6 @@
 # URL Shortener Project
 
-This project is a simple URL shortener service built with **Node.js**, **Express**, and **SQLite**, with monitoring using **Prometheus** and **Grafana**.
+A simple URL shortener service built with **Node.js**, **Express**, and **SQLite**, monitored using **Prometheus** and **Grafana**.
 
 ---
 
@@ -9,14 +9,16 @@ This project is a simple URL shortener service built with **Node.js**, **Express
 - [Requirements](#requirements)  
 - [Setup & Run](#setup--run)  
 - [API Endpoints](#api-endpoints)  
-- [Monitoring](#monitoring)    
+- [Monitoring & Metrics](#monitoring--metrics)  
+- [Prometheus Alerts](#prometheus-alerts)  
+- [License](#license)  
 
 ---
 
 ## Requirements
 
 - Docker & Docker Compose  
-- Node.js (for local dev)  
+- Node.js (for local development)  
 - Git  
 
 ---
@@ -29,12 +31,10 @@ This project is a simple URL shortener service built with **Node.js**, **Express
 git clone <your-repo-url>
 cd depi-devops-url-shortener
 
-Start the services:
-
+2 .Start services:
 docker compose up --build -d
 
-
-Check services:
+3 .Check services:
 
 URL Shortener app: http://localhost:3000
 
@@ -42,8 +42,7 @@ Grafana dashboard: http://localhost:3001
 
 Prometheus: http://localhost:9090
 
-Stop services:
-
+4 .Stop services:
 docker compose down
 
 API Endpoints
@@ -74,7 +73,7 @@ Response:
   "created_at": "2025-11-29T18:00:00.000Z"
 }
 
-2. List all URLs
+2. List URLs
 GET /api/urls
 
 
@@ -101,6 +100,9 @@ Response:
   }
 ]
 
+
+mine=true returns only URLs created by the owner.
+
 3. Delete a URL
 DELETE /api/urls/:code
 
@@ -115,27 +117,23 @@ Response:
 { "deleted": true }
 
 
-Only the owner can delete their URL. Global entries with null owner_id cannot be deleted.
+Only the owner can delete their URLs. Global entries with null owner_id cannot be deleted.
 
 4. Redirect to Original URL
 GET /:code
 
 
-Response:
-
 Redirects to the original URL
 
-Increments Prometheus metrics
+Increments Prometheus metrics (url_shortener_redirect_total)
 
 5. Short URL Info Page
 GET /s/:code
 
 
-Response:
+Returns a simple HTML page showing creation date and original link.
 
-Simple HTML page showing URL creation date and original link
-
-6. Metrics (Prometheus)
+6. Metrics for Prometheus
 GET /metrics
 
 
@@ -145,15 +143,15 @@ url_shortener_created_total — number of URLs shortened
 
 url_shortener_redirect_total — number of successful redirects
 
-url_shortener_not_found_total — number of 404 lookups
+url_shortener_not_found_total — number of failed lookups (404)
 
 url_shortener_request_latency_seconds — request latency histogram
 
-Monitoring
+Monitoring & Metrics
 
-Prometheus scrapes metrics from /metrics every 5 seconds
+Prometheus scrapes /metrics every 5 seconds.
 
-Grafana dashboards show:
+Grafana dashboard displays:
 
 Rate of URL creations & redirects
 
@@ -163,10 +161,33 @@ Total URLs
 
 Rate of 404 errors
 
-Alerts (Prometheus Alert Rules):
+Grafana URL: http://localhost:3001
 
-High 404 error rate
+Prometheus Alerts
 
-High 95th percentile latency
+Alert rules configured:
 
-Low URL creation rate
+High 404 Rate
+
+Expression: rate(url_shortener_not_found_total[2m]) > 0.1
+
+Fired if 404s exceed 0.1/sec for 2 minutes
+
+High 95th Percentile Latency
+
+Expression: histogram_quantile(0.95, sum(rate(url_shortener_request_latency_seconds_bucket[2m])) by (le)) > 1
+
+Fired if p95 latency exceeds 1 second
+
+No New URLs
+
+Expression: rate(url_shortener_created_total[10m]) < 0.01
+
+Fired if no URLs are created in the past 10 minutes
+
+License
+
+MIT License
+
+
+✅ This **covers everything for Week 4**: running the project, API docs, metrics, monitoring, and alerts.  
