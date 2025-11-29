@@ -170,5 +170,3 @@ High 404 error rate
 High 95th percentile latency
 
 Low URL creation rate
-
-License
