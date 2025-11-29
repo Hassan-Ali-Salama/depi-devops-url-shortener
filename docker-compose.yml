@@ -8,7 +8,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./db:/app/db             # SQLite persistent folder
+      - sqlite_data:/app/db             # SQLite persistent folder
     environment:
       - PORT=3000
       - DB_FILE=/app/db/data.sqlite
@@ -20,9 +20,9 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/rules:/etc/prometheus/rules              # mount alert rules folder
-      - prometheus_data:/prometheus                           # persistent TSDB
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules
+      - prometheus_data:/prometheus
     depends_on:
       - web
     restart: unless-stopped
@@ -48,3 +48,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  sqlite_data:
