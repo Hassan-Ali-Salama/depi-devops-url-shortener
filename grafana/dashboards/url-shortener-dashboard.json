@@ -1,0 +1,83 @@
+ [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Rate of URL Creations & Redirects (Week 3)",
+      "description": "Week 3 - rate of URLs shortened and redirects over time.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "rate(url_shortener_created_total[5m])", "legendFormat": "URLs created /s" },
+        { "refId": "B", "expr": "rate(url_shortener_redirect_total[5m])", "legendFormat": "Redirects /s" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total Shortened URLs (Week 3)",
+      "description": "Week 3 - total URLs that have been shortened.",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        { "refId": "A", "expr": "url_shortener_created_total" }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "horizontal",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "p95 Request Latency (Week 3)",
+      "description": "Week 3 - 95th percentile request latency for URL creation and redirects.",
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 8 },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum(rate(url_shortener_request_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95 latency (s)" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Rate of 404 Errors (Week 3)",
+      "description": "Week 3 - rate of failed lookups (404).",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        { "refId": "A", "expr": "rate(url_shortener_not_found_total[5m])", "legendFormat": "404s /s" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "High 404 Rate Alert",
+      "description": "Shows if High404Rate alert is firing",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 24 },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname='High404Rate', alertstate='firing'}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "orientation": "horizontal", "justifyMode": "center" }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "High Latency 95th Percentile Alert",
+      "description": "Shows if HighLatency95 alert is firing",
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 24 },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname='HighLatency95', alertstate='firing'}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "orientation": "horizontal", "justifyMode": "center" }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "No New URLs Alert",
+      "description": "Shows if NoNewURLs alert is firing",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 24 },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname='NoNewURLs', alertstate='firing'}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "orientation": "horizontal", "justifyMode": "center" }
+    }
+  ]

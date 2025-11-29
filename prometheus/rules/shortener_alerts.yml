@@ -1,0 +1,29 @@
+groups:
+  - name: url-shortener-alerts
+    rules:
+      - alert: High404Rate
+        expr: rate(url_shortener_not_found_total[2m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 404 error rate"
+          description: "404 responses exceed 0.1/sec for 2 minutes"
+
+      - alert: HighLatency95
+        expr: histogram_quantile(0.95, sum(rate(url_shortener_request_latency_seconds_bucket[2m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 95th percentile latency"
+          description: "95th percentile latency > 1 second"
+
+      - alert: NoNewURLs
+        expr: rate(url_shortener_created_total[10m]) < 0.01
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low URL creation rate"
+          description: "No URLs created in the past 10 minutes."
